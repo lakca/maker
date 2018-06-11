@@ -1,0 +1,33 @@
+{
+  "name": "blog",
+  "version": "1.0.0",
+  "description": "lakca`s blog",
+  "main": "index.js",
+  "bin": {
+    "blog": "./bin/lakca"
+  },
+  "scripts": {
+    "test": "mocha",
+    "build": "node script/md.js",
+    "build-highlight": "sh script/highlight.sh",
+    "start": "./bin/lakca.js -p 8001"
+  },
+  "author": "lakca",
+  "license": "MIT",
+  "devDependencies": {
+    "css-to-json": "^2.1.0",
+    "github-markdown-css": "^2.10.0",
+    "highlight.js": "^9.12.0",
+    "html-minifier": "^3.5.16",
+    "istanbul": "^0.4.5",
+    "marked": "^0.4.0",
+    "mocha": "^5.2.0",
+    "node-minify": "^3.0.1",
+    "power-assert": "^1.5.0"
+  },
+  "dependencies": {
+    "commander": "^2.15.1",
+    "debug": "^3.1.0",
+    "mime-types": "^2.1.18"
+  }
+}
