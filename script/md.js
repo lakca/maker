@@ -1,6 +1,5 @@
 const marked = require('marked');
 const highlight = require('highlight.js');
-const cssJson = require('./css-json');
 const minifyHTML = require('html-minifier').minify;
 const path = require('path');
 const fs = require('fs');
@@ -9,33 +8,8 @@ const readdir = promisify(fs.readdir);
 const readFile = promisify(fs.readFile);
 const writeFile = promisify(fs.writeFile);
 const fstat = promisify(fs.stat);
-const parse = promisify(marked);
 const mdDir = path.join(__dirname, '..', 'md');
 const htmlDir = path.join(__dirname, '..', 'html');
-const staticDir = path.join(__dirname, '..', 'static');
-
-// copy github markdown style.
-const githubStyle = fs.readFileSync(require.resolve('github-markdown-css')).toString();
-const githubStyleObj = cssJson.toJSON(githubStyle);
-// handle error handle of @font-face.url
-githubStyleObj.children['@font-face'].attributes.src = githubStyleObj.children['@font-face'][1];
-delete githubStyleObj.children['.markdown-body code'].attributes['background-color'];
-delete githubStyleObj.children['.markdown-body pre>code'].attributes['background'];
-delete githubStyleObj.children['.markdown-body pre code'].attributes['background-color'];
-delete githubStyleObj.children['.markdown-body pre code'].attributes['display'];
-githubStyleObj.children['.markdown-body'] = {
-  attributes: {
-    width: '960px',
-    margin: '50px auto'
-  }
-};
-githubStyleObj.children['.markdown-body code'] = {
-  attributes: {
-    padding: '10px!important',
-    'border-radius': '3px'
-  }
-};
-fs.writeFileSync(path.join(staticDir, 'markdown.css'), cssJson.toCSS(githubStyleObj));
 
 marked.setOptions({
   renderer: new marked.Renderer(),
@@ -53,6 +27,19 @@ marked.setOptions({
   xhtml: false
 });
 
+function parseMarkdown(md, before, after) {
+  let html;
+  if (before) before();
+  try {
+    html = marked(md);
+    if (after) after();
+  } catch (e) {
+    if (after) after();
+    throw e;
+  }
+  return html;
+}
+
 function ensureDir(dir) {
   dir.split(path.sep).reduce((prev, cur) => {
     const p = path.join(prev, cur);
@@ -65,19 +52,43 @@ function ensureDir(dir) {
   }, path.sep);
 }
 
-async function write(filePath, content) {
-  content = '<html><head>' +
+function _getFlowTitle(flow) {
+  return flow.title || flow.filename;
+}
+
+function generateNav(flow = []) {
+  const blocks = [];
+  let index = flow.length - 1;
+  blocks[index] = `<a>${_getFlowTitle(flow[index])}</a>`;
+  index--;
+  blocks[index] = `<a href="./">${_getFlowTitle(flow[index])}</a>`;
+  index--;
+  while(index >=0) {
+    const rep = flow.length - 2 - index;
+    blocks[index] = `<a href="${'../'.repeat(rep)}">${_getFlowTitle(flow[index])}</a>`;
+    index--;
+  }
+  return `${blocks.join('<span class="sep">></span>')}`;
+}
+
+async function writeHTML(filePath, content, options) {
+  const flow = options.flow;
+  const html = '<html><head>' +
     '<meta charset="utf-8"/>' +
     '<script src="/static/highlight/highlight.min.js"></script>' +
     '<script src="/static/highlight/languages/javascript.min.js"></script>' +
-    '<link rel="stylesheet" href="/static/highlight/styles/monokai-sublime.min.css"/>' +
+    '<link rel="stylesheet" href="/static/main.css"/>' +
     '<link rel="stylesheet" href="/static/markdown.css"/>' +
+    '<link rel="stylesheet" href="/static/highlight/styles/monokai-sublime.min.css"/>' +
     '</head><body>' +
+    '<div class="main-container">' +
+    '<div class="main-nav">' + generateNav(flow) + '</div>' +
     '<div class="markdown-body">' +
     content +
     '</div>' +
+    '</div>' +
     '</body></html>'
-  content = minifyHTML(content, {
+  const miniHTML = minifyHTML(html, {
     collapseInlineTagWhitespace: true,
     collapseWhitespace: true,
     minifyCSS: true,
@@ -85,29 +96,93 @@ async function write(filePath, content) {
     preserveLineBreaks: false,
     removeComments: true
   });
-  await writeFile(filePath, content);
+  await writeFile(filePath, miniHTML);
 }
 
-async function exec(dir, toDir) {
+async function travel(dir, catalog) {
   const files = await readdir(dir);
-  if (files.length) ensureDir(toDir);
+  if (files.length) ensureDir(catalog.outputPath);
   const ex = files.map(file => {
     const filePath = path.join(dir, file);
     return fstat(filePath).then(stat => {
       if (stat.isFile() && path.extname(file).toLowerCase() === '.md') {
-        return readFile(filePath).then(c => {
-          return parse(c.toString());
-        }).then(html => {
-          return write(path.join(toDir, file.replace(/\.md$/i, '.html')), html);
-        });
+        const filename = path.basename(file, path.extname(file));
+        const obj = {
+          type: 'file',
+          filename: filename,
+          realPath: filePath,
+          outputPath: path.join(catalog.outputPath, filename + '.html'),
+          title: '',
+          flow: [...catalog.flow]
+        };
+        obj.flow.push(obj);
+        catalog.children.push(obj);
       } else if (stat.isDirectory()) {
-        return exec(filePath, path.join(toDir, file));
+        const obj = {
+          type: 'folder',
+          filename: file,
+          realPath: filePath,
+          outputPath: path.join(catalog.outputPath, file),
+          children: [],
+          flow: [...catalog.flow]
+        };
+        obj.flow.push(obj);
+        catalog.children.push(obj);
+        return travel(filePath, obj);
       }
     });
   });
   await Promise.all(ex);
 }
 
+async function generate(catalog) {
+  if (catalog.type === 'folder') {
+    const folder = catalog.realPath;
+    await Promise.all(catalog.children.map(c => {
+      return generate(c);
+    }));
+    // generate summary file.
+    const lines = ['# 目录'];
+    for (const c of catalog.children) {
+      lines.push(` - [${c.title || c.filename}](./${c.filename}.html)`);
+    }
+    const summary = lines.join('\n');
+    const summaryHTML = parseMarkdown(summary);
+    await writeHTML(path.join(catalog.outputPath, 'summary.html'), summaryHTML, {
+      flow: [...catalog.flow, {
+        title: 'summary'
+      }]
+    });
+  } else if (catalog.type === 'file') {
+    const content = await readFile(catalog.realPath);
+    const oldHeading = marked.Renderer.prototype.heading;
+    const html = parseMarkdown(content.toString(), function () {
+      marked.Renderer.prototype.heading = function (text, level, raw) {
+        if (!catalog.title && level === 1) {
+          catalog.title = text;
+        }
+        return oldHeading.apply(this, arguments);
+      };
+    }, function () {
+      marked.Renderer.prototype.heading = oldHeading;
+    });
+    await writeHTML(catalog.outputPath, html, {
+      flow: catalog.flow
+    });
+  }
+}
+
 (async function() {
-  await exec(mdDir, htmlDir);
+  const catalog = {
+    type: 'folder',
+    title: '首页',
+    filename: '',
+    realPath: mdDir,
+    outputPath: htmlDir,
+    children: []
+  };
+  catalog.flow = [catalog];
+  await travel(mdDir, catalog);
+  await generate(catalog);
+  console.log(catalog);
 }()).catch(console.error);

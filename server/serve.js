@@ -25,13 +25,6 @@ async function step(handlers, req, res) {
   res.end();
 }
 
-async function init(req, res) {
-  const { pathname } = url.parse(req.url);
-  req.ctx = {
-    path: pathname
-  };
-}
-
 async function serve(req, res) {
   let file;
   let dir;
@@ -42,7 +35,7 @@ async function serve(req, res) {
     dir = path.join(htmlDir, realPath);
   }
   debug('file path: %s', dir);
-  if (cache.has(dir)) {
+  if (req.ctx.config.cache && cache.has(dir)) {
     file = cache.get(dir);
   } else {
     try {
@@ -57,7 +50,9 @@ async function serve(req, res) {
           type: type,
           mtime: stat.mtime
         };
-        cache.set(dir, file);
+        if (req.ctx.config.cache) {
+          cache.set(dir, file);
+        }
       }
     } catch (e) {
       debug('html resolve error: %o', e);
@@ -84,7 +79,14 @@ async function serve(req, res) {
 module.exports = function (options) {
   http.createServer(function (req, res) {
     debug('request in');
-    step([init, serve], req, res).catch(e => {
+    const { pathname } = url.parse(req.url);
+    req.ctx = {
+      path: pathname,
+      get config() {
+        return JSON.parse(JSON.stringify(options))
+      }
+    };
+    step([serve], req, res).catch(e => {
       debug('request handler error: %o', e);
       if (!res.finished) {
         res.statusCode = 404;

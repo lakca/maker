@@ -8,9 +8,9 @@
   },
   "scripts": {
     "test": "mocha",
-    "build": "node script/md.js",
-    "build-highlight": "sh script/highlight.sh",
-    "start": "./bin/lakca.js -p 8001"
+    "help": "bin/lakca.js -h",
+    "build": "bin/lakca.js build",
+    "start": "bin/lakca.js start -p 8001"
   },
   "author": "lakca",
   "license": "MIT",
@@ -23,11 +23,13 @@
     "marked": "^0.4.0",
     "mocha": "^5.2.0",
     "node-minify": "^3.0.1",
-    "power-assert": "^1.5.0"
+    "power-assert": "^1.5.0",
+    "stylus": "^0.54.5"
   },
   "dependencies": {
     "commander": "^2.15.1",
     "debug": "^3.1.0",
-    "mime-types": "^2.1.18"
+    "mime-types": "^2.1.18",
+    "power-radix": "^2.5.1"
   }
 }
