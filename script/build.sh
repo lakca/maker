@@ -1,30 +1,21 @@
 #!/bin/bash
 
-entry=`pwd`
-tmpFolder='md-'`date +%s`
-curDir=`dirname $(realpath $0)`
-mdDir=`cd $curDir && cd .. && pwd`/md
+log() {
+  echo -e "\033[31m $1 \033[0m"
+}
 
-if [ !-d $mdDir ];then
-  mkdir $mdDir
-fi
+entry=`pwd`
+curDir=`dirname $(realpath $0)`
 
 cd $curDir
-mkdir $tmpFolder
-cd $tmpFolder
 
-git clone https://github.com/lakca/note.git
-cd note
-mv article $mdDir
-
-if [ -f 'LICENSE' ];then
-  cp LICENSE $mdDir/license.md
-fi
-
-cd $curDir;
+log 'build highlight.js'
 sh highlight.sh
+
+log 'build style'
 node style.js
+
+log 'build markdown'
 node md.js
 
-rm -rf $tmpFolder
 cd $entry

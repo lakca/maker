@@ -9,6 +9,7 @@ const access = promisify(fs.access);
 const fstat = promisify(fs.stat);
 const readFile = promisify(fs.readFile);
 
+const MAX_AGE = 3600 * 24 * 365 * 10;
 const cache = new Map();
 const htmlDir = path.join(__dirname, '../html');
 const staticDir = path.join(__dirname, '../static');
@@ -62,7 +63,7 @@ async function serve(req, res) {
     res.setHeader('Content-Type', file.type);
     res.setHeader('Content-Length', file.size);
     res.setHeader('Last-Modified', file.mtime.toGMTString());
-    res.setHeader('Cache-Control', `public,max-age=${3600}`);
+    res.setHeader('Cache-Control', `public,max-age=${MAX_AGE}`);
     const ifm = req.headers['if-modified-since'];
     if (ifm === file.mtime.toGMTString()) {
       debug('304...');

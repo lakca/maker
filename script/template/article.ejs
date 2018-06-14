@@ -1,0 +1,24 @@
+<html>
+
+<head>
+  <meta charset="utf-8" />
+  <script src="/static/highlight/highlight.min.js"></script>
+  <%-
+    languages.map(lang => {
+      return `<script src="/static/highlight/languages/${lang}.min.js"></script>`;
+    });
+  %>
+  <script src="/static/highlight/languages/javascript.min.js"></script>
+  <link rel="stylesheet" href="/static/main.css"/>
+  <link rel="stylesheet" href="/static/markdown.css"/>
+  <link rel="stylesheet" href="/static/highlight/styles/monokai-sublime.min.css"/>
+</head>
+
+<body>
+  <div class="main-container">
+    <div class="main-nav"><%- nav %></div>
+    <div class="markdown-body"><%- content %></div>
+  </div>
+</body>
+
+</html>

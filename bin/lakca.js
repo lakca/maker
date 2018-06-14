@@ -50,9 +50,11 @@ program.command('build [target]')
   .description('run command [style|md|highlight|all] to build files.')
   .action(function(target) {
     if (target === 'style') {
-      execSync(`node style.js`, { cwd: path.join(__dirname, '..', 'script') });
+      execSync(`node ${path.join(__dirname, '..', 'script', 'style.js')}`);
     } else if (target === 'md') {
-      execSync(`node md.js`, { cwd: path.join(__dirname, '..', 'script') });
+      execSync(`node ${path.join(__dirname, '..', 'script', 'markdown')}`);
+    } else if (target === 'note') {
+      execFileSync(path.join(__dirname, '..', 'script', 'note.sh'));
     } else if (target === 'highlight') {
       execFileSync(path.join(__dirname, '..', 'script', 'highlight.sh'));
     } else if (target === 'all') {
@@ -60,6 +62,7 @@ program.command('build [target]')
     } else {
       console.log('Noting to do.');
     }
+    console.log('done');
   });
 
 program._name = 'lakca';
