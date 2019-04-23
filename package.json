@@ -1,36 +1,26 @@
 {
-  "name": "blog",
+  "name": "maker",
   "version": "1.0.0",
-  "description": "lakca`s blog",
+  "description": "post maker.",
   "main": "index.js",
   "bin": {
-    "blog": "./bin/lakca"
+    "maker": "./bin/maker"
   },
   "scripts": {
-    "test": "mocha",
-    "help": "bin/lakca.js -h",
-    "build": "bin/lakca.js build",
-    "start": "bin/lakca.js start -p 8001"
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/lakca/maker.git"
   },
   "author": "lakca",
   "license": "MIT",
-  "devDependencies": {
-    "css-to-json": "^2.1.0",
-    "ejs": "^2.6.1",
-    "github-markdown-css": "^2.10.0",
-    "highlight.js": "^9.12.0",
-    "html-minifier": "^3.5.16",
-    "istanbul": "^0.4.5",
-    "marked": "^0.4.0",
-    "mocha": "^5.2.0",
-    "node-minify": "^3.0.1",
-    "power-assert": "^1.5.0",
-    "stylus": "^0.54.5"
+  "bugs": {
+    "url": "https://github.com/lakca/maker/issues"
   },
-  "dependencies": {
-    "commander": "^2.15.1",
-    "debug": "^3.1.0",
-    "mime-types": "^2.1.18",
-    "power-radix": "^2.5.1"
+  "homepage": "https://github.com/lakca/maker#readme",
+  "devDependencies": {
+    "commander": "^2.20.0",
+    "js-yaml": "^3.13.1"
   }
 }

@@ -1,0 +1,20 @@
+
+# html
+title: lakca blog
+description: cheat sheet of every day
+keywords:
+  - javascript
+  - nodejs
+  - front end
+
+# site
+webRoot: http://longpeng.me
+permalink: false
+# site module
+category: true
+tag: true
+search: true
+
+# make
+## absolute or relative path of output folder
+dist: dist

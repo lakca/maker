@@ -1,0 +1,29 @@
+#!/usr/bin/env node
+
+const program = require('commander')
+const pkg = require('../package.json')
+
+program.version(pkg.version)
+
+function parseArray(x) {
+  return x && x.match(/[^,\s][^,]+[^,\s](?=,?)/g)
+}
+
+program
+  .description('make markdown file to html file.')
+  .option('-f, --file <file>', 'location of markdown file/folder.')
+  .option('-o, --output <output>', 'location of generated files to save. Directory structure will be preserved, while <file> is a folder.')
+  .option('-c, --config <config>', 'location of config file(yaml, json/js supported).')
+  .option('-t, --title <title>', 'html title.')
+  .option('-d, --description <description>', 'html description.')
+  .option('-k, --keywords <keywords>', 'html keywords', parseArray)
+  .parse(process.argv)
+
+require('../src/entry.js')({
+  file: program.file,
+  output: program.output,
+  config: program.config,
+  title: program.title,
+  description: program.description,
+  keywords: program.keywords
+})
