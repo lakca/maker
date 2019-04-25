@@ -35,7 +35,7 @@ HTML Elements
 
 ### JavaScript
 
-## Cover
+## **Cover**
 
 ### Design
 
