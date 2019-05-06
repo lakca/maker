@@ -1,0 +1,13 @@
+
+void function () {
+  var source = "<%= encryptedPostFile %>"
+  var search = window.location.search.match(/(?<=[\?&]_\=)([^&]+)/)
+  if (search) {
+    var passcode = search[1]
+    loadScript("<%= path('decrypt.js') %>", function() {
+      loadScript(source)
+      var text = maker.decrypt(maker.encrypted[source], passcode)
+      document.getElementById('content').innerHTML = text
+    })
+  }
+}()

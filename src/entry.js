@@ -2,7 +2,7 @@ const yaml = require('js-yaml')
 const fs = require('fs')
 const path = require('path')
 const promisify = require('util');
-const configFile = path.join(__dirname, '../config.yaml')
+const configFile = path.join(__dirname, '../config.yml')
 // const config = yaml.safeLoad(fs.readFileSync(configFile))
 
 function getConfig(config) {
