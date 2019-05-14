@@ -1,0 +1,25 @@
+
+<%- partial('header', {
+  title: `${post.title} - ${post.author}`,
+  description: post.description,
+  keywords: post.keywords
+}) %>
+
+<%- partial('navigator') %>
+
+<article id="post-<%= post.id %>">
+  <header>
+    <%= post.date %>
+  </header>
+  <main>
+    <%= post.content %>
+  </main>
+  <footer>
+    <%- partial('block.share', {
+      href: post.permalink,
+      title: `${post.title} - ${post.author}`
+    }) %>
+  </footer>
+</article>
+
+<%- partial('footer') %>

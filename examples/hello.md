@@ -1,10 +1,17 @@
 ```
 title: custom ...
 description: custom ...
-keywords: a, b, c ...
-source: /assets/location
-tags: a, b, ...
-categories: x, y, ...
+keywords:
+  - a
+  - b
+  - c
+asset: /assets/location
+tags:
+  - a
+  - b
+categories:
+  - x
+  - y
 passcode: passcode
 ```
 [toc]

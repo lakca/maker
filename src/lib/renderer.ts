@@ -39,7 +39,7 @@ function renderTag(
 }
 
 export = class MyRenderer extends Renderer {
-  constructor(options) {
+  constructor(options?: object) {
     super(options)
   }
 
@@ -84,5 +84,11 @@ export = class MyRenderer extends Renderer {
     } else {
       return renderTag('p', text)
     }
+  }
+
+  public code(code, lang, escaped) {
+    console.log(lang, escaped)
+    console.log(code)
+    return super.code(code, lang, escaped)
   }
 }

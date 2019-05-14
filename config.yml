@@ -8,13 +8,24 @@ keywords:
   - front end
 
 # site
-webRoot: http://longpeng.me
-permalink: false
+web_root: http://longpeng.me
+use_permalink: false
 # site module
-category: true
-tag: true
-search: true
+has_category: true
+has_tag: true
+has_search: true
 
 # make
-## absolute or relative path of output folder
-dist: dist
+# absolute or relative path of output folder
+output: dist
+
+theme: default
+# pagination of post list page
+post_per_page: 10
+
+# plugin:
+share.services:
+  - wechat
+  - twitter
+  - facebook
+  - weibo

@@ -1,0 +1,10 @@
+<%- partial('header') %>
+
+<% get('post', {
+  total: Infinity,
+  per: 10
+}).forEach(post => { %>
+  <%- partial('post-short', { post }) %>
+<% }) %>
+
+<%- partial('footer') %>
