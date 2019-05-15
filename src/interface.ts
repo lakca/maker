@@ -48,8 +48,9 @@ export interface postObject {
   categories: string[]
   tags: string[]
   author: string
+  passcode?: string
   permalink: string
-  date: Date
+  time: Date
 }
 
 export interface contextObject {

@@ -1,24 +1,13 @@
-import { safeLoad } from 'js-yaml'
-import { extname, join, isAbsolute } from 'path'
-import { configInterface, optionsInterface, contextInterface } from './interface'
-import { readFileText, isFile, parseSimpleTemplate, writeFileRecursive } from './helper'
+import { resolve } from 'path'
+import { configInterface } from './interface'
+import { readFileTextAsync, renderSimpleTemplate, writeFileRecursiveAsync, loadConfigFromFileAsync, eachFile } from './helper'
 import parser = require('./lib/parser')
+import PostLoader from './lib/post_loader'
+import { promisify } from 'util'
+import { renderFile as renderEjsFile, render as renderEjs } from 'ejs'
+import { readFileSync } from 'fs';
+const renderEjsFileAsync = promisify(renderEjsFile)
 const debug = require('debug')('maker:entry')
-const ejs = require('ejs')
-
-async function loadConfig(configFile: string): Promise<configInterface> {
-  if (['.yml', '.yaml'].includes(extname(configFile))) {
-    const str = await readFileText(configFile)
-    console.log(str)
-    return safeLoad(str)
-  } else {
-    return new Promise(function (resolve) {
-      process.nextTick(function() {
-        resolve(require(configFile))
-      })
-    })
-  }
-}
 
 const defaultConfig: configInterface = {
   web_root: 'http://localhost:8090',
@@ -38,63 +27,95 @@ const defaultConfig: configInterface = {
   silent: true,
 }
 
-async function merge(config: configInterface, options: optionsInterface): Promise<contextInterface> {
-  const ctx = <contextInterface>Object.assign({}, defaultConfig, config)
-  ctx.cwd = options.cwd
-  if (await isFile(options.file)) {
-    ctx.file = options.file
-  } else {
-    ctx.folder = options.file
+async function loadConfig(cwd, file) {
+  if (file) {
+    return loadConfigFromFileAsync(resolve(cwd, file))
   }
-  return ctx
+  const files = [
+    'config.json',
+    'config.js',
+    'config.yaml',
+    'config.yml'
+  ]
+  for (const file of files) {
+    const config = await loadConfigFromFileAsync(resolve(cwd, file))
+    if (config) return config
+  }
 }
 
-async function getStaticConfig(cwd, filename) {
-  const configFile = filename ?
-    isAbsolute(filename) ?
-    filename :
-    join(cwd, filename) :
-    join(cwd, 'config.yml')
-  return loadConfig(configFile)
-}
-
-module.exports = async function(options: optionsInterface) {
-  debug('input opts: %O', options)
-  const staticConfig = await getStaticConfig(options.cwd, options.configFile)
-  const mergedConfig = await merge(staticConfig, options)
-  debug('config: %O', mergedConfig)
-
-  const result = await parser(mergedConfig, await readFileText(mergedConfig.file))
-  console.log(result)
-  return result
-}
-
-module.exports.create = async function(name, options) {
+exports.create = async function(name, options) {
   debug('name: %s, options: %O', name, options)
   const type = options.type || 'default'
-  const tmpl = await readFileText(join(options.cwd, `templates/${type}.md`))
-  const config = await getStaticConfig(options.cwd, options.configFile)
+  const tmplFile = resolve(options.cwd, `templates/${type}.md`)
+  const template = await readFileTextAsync(tmplFile)
+  const config = await loadConfig(options.cwd, options.config)
   const date = new Date()
-  const context = {
-    config,
-    title: name,
+  const time = {
     y: date.getFullYear(),
     m: date.getMonth() + 1,
     d: date.getDate(),
-    timestamp: date.getTime()
+    H: date.getHours(),
+    M: date.getMinutes(),
+    S: date.getSeconds()
   }
-  const filename = parseSimpleTemplate(
+  const context = {
+    config,
+    title: name,
+    title2: name.replace(/\s/g, '_'),
+    y: time.y,
+    m: time.m,
+    d: time.d,
+    H: time.H,
+    M: time.M,
+    S: time.S,
+    timestamp: date.getTime(),
+    time: `${time.y}-${time.m}-${time.d} ${time.H}:${time.M}:${time.S}`
+  }
+  const filename = renderSimpleTemplate(
     config.post_name,
     context,
     ['<', '>']
   )
-  const text = parseSimpleTemplate(
-    tmpl,
+  const text = renderSimpleTemplate(
+    template,
     context,
     ['{', '}']
   )
-  return writeFileRecursive(
-    join(options.cwd, `source/${filename}.md`),
+  return writeFileRecursiveAsync(
+    resolve(options.cwd, `source/${filename}.md`),
     text
   )
+}
+
+exports.build = async function(options: {
+  cwd: string
+  config?: string
+  output?: string
+}) {
+  debug('input options: %O', options)
+  const sourceFolder = resolve(options.cwd, 'source')
+  const outputFolder = resolve(options.cwd, 'output')
+  const themeFolder = resolve(options.cwd, 'theme')
+  const config = await loadConfig(options.cwd, options.config)
+  debug('config: %O', config)
+  // post files
+  const posts = await eachFile(sourceFolder)
+  await Promise.all(posts.map(file => {
+    const postLoader = new PostLoader(resolve(sourceFolder, ...file), {
+      web_root: config.web_root
+    })
+    return async function() {
+      await postLoader.load()
+      const post = postLoader.toJSON()
+      const site = config
+      const html = await renderEjsFileAsync(resolve(themeFolder, 'post-single.ejs'), {
+        post,
+        site
+      }, {
+        root: themeFolder
+      })
+      const filename = file.join('/').replace(/\.md$/, '.html')
+      await writeFileRecursiveAsync(resolve(outputFolder, 'post', filename), html)
+    }()
+  }))
 }

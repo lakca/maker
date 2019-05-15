@@ -4,12 +4,12 @@ import { contextInterface, postMetaInterface } from '../interface'
 import highlight from './highlight'
 import Renderer from './renderer'
 import sanitizer from './sanitizer'
-import { readFileText } from '../helper'
+import { readFileTextAsync } from '../helper'
 
 export = async function(opts: contextInterface, text?: string) {
 
   if (!text) {
-    text = await readFileText(opts.file)
+    text = await readFileTextAsync(opts.file)
   }
 
   text = cleanRawText(text)

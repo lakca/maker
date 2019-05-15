@@ -7,22 +7,20 @@ const highlight = require('./highlight')
 const Renderer = require('./renderer')
 const sanitizer = require('./sanitizer')
 import { postObject } from "../interface";
+import { encrypt } from "../helper";
 
 export = class PostLoader {
-  constructor(private readonly filename, private readonly options: {
-    root: string
+  constructor(public readonly filename, public readonly options: {
     web_root: string
     silent?: boolean
-    use_permalink?: boolean
-    [x: string]: any
   }) {}
 
   private hasRead: boolean = false
-  private _meta: postObject|undefined
+  private metadata: postObject|undefined
   private htmlBuffer: Buffer = Buffer.allocUnsafe(0)
 
   private set meta(v) {
-    this._meta = Object.assign({
+    this.metadata = Object.assign({
       /* id: string | number
       title: string
       content: string
@@ -42,22 +40,28 @@ export = class PostLoader {
 
   private get meta() {
     ok(this.hasRead, 'post data has not been read, call load() instead.')
-    return this._meta
+    return this.metadata
   }
 
-  async load(items?: string[]) {
-    if (!this.hasRead) {
+  public async load(force: boolean = false) {
+    if (force || !this.hasRead) {
       await this.read()
       this.hasRead = true
     }
   }
 
-  get html() {
+  public get html() {
     ok(this.hasRead, 'post data has not been read, call load() instead.')
-    return this.htmlBuffer.toString()
+    const html = this.htmlBuffer.toString()
+    const passcode = (<postObject>this.meta).passcode
+    if (passcode) {
+      return encrypt(html, passcode.toString())
+    } else {
+      return html
+    }
   }
 
-  toJSON(): postObject {
+  public toJSON(): postObject {
     const post = JSON.parse(JSON.stringify(this.meta))
     post.html = this.html
     return post
@@ -123,11 +127,7 @@ function parseMarkdown(text: string, options): Promise<string> {
     smartypants: true,
     tables: true,
     xhtml: false,
-    baseUrl: ''
-  }
-  /* use permalink */
-  if (options.use_permalink) {
-    parseOptions.baseUrl = options.web_root
+    baseUrl: options.web_root
   }
   return new Promise((resolve, reject) => {
     marked(text, parseOptions, function (err, output) {

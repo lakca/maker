@@ -1,6 +1,5 @@
 ```
-title: { title }
-time: { time }
+title: this is a test
 customField: this field is reserved in post object, only used by layout in theme.
 ```
 > this is a template.

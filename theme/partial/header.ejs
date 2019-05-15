@@ -3,12 +3,13 @@
     <title><%= title %></title>
     <meta name="description" content="<%= description %>">
     <meta name="keywords" content="<%= keywords.join(',') %>">
-    <% if (scripts) for (const script of scripts) { %>
+    <% for (const script of scripts) { %>
       <script
-        <% if (typeof script === 'string') %>
+        <% if (typeof script === 'string') { %>
         src="<%= script %>"
-        <% else %>
+        <% } else { %>
         <%= stringifyAttributes(script) %>
+        <% } %>
       ></script>
     <% } %>
   </head>

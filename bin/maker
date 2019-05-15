@@ -21,13 +21,12 @@ let command = false
 program
   .description('make markdown file to html file.')
   .option('-f, --file <file>', 'location of markdown file/folder.', resolvePath)
-  .option('-o, --output <output>', 'location of generated files to save. ' +
-    'Directory structure will be preserved, while <file> is a folder.', resolvePath)
   .option('-c, --config <config>', 'location of config file(yaml, json/js supported).', resolvePath)
 
 program
   .command('create <name>')
   .description('create new post.')
+  .option('-c, --config <config>', 'location of config file(yaml/json/js)', resolvePath)
   .option('-t, --type <type>', '[post] type, respective template will be applied.')
   .option('-D, --desc <desc>', '[post] html description.')
   .option('-K, --keywords <keyword,keyword,...>', '[post] html keywords.', parseArray)
@@ -36,25 +35,24 @@ program
   .option('-P, --passcode <passcode>', '[post] passcode, if encryption is supposed.')
   .action(function(name, options) {
     command = true
-    entry.create(name, Object.assign(options.opts(), {
+    entry.create(name, Object.assign({
       cwd: cwd
-    })).catch(console.error)
+    }, options.opts())).catch(console.error)
+  })
+
+program
+  .command('build')
+  .description('build ')
+  .option('-c, --config <config>', 'location of config file(yaml/json/js)', resolvePath)
+  .option('-o, --output <output>', 'location of generated files to save. ' +
+    'Directory structure will be preserved, while <file> is a folder.', resolvePath)
+  .action(options => {
+    command = true
+    entry.build(Object.assign({
+      cwd: cwd
+    }, options.opts())).catch(console.error)
   })
 
 const opts = program
   .parse(process.argv)
   .opts()
-
-if (!command)
-  entry({
-    cwd: cwd,
-    file: opts.file,
-    output: opts.output,
-    config: opts.config,
-    title: opts.title,
-    description: opts.desc,
-    keywords: opts.keywords,
-    tags: opts.tags,
-    categories: opts.categories,
-    passcode: opts.passcode
-  }).catch(console.error)
