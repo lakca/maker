@@ -16,33 +16,45 @@ function resolvePath(pathname) {
   return path.isAbsolute(pathname) && pathname || path.resolve(cwd, pathname)
 }
 
-const opts = program
-  .description('make markdown file to html file.')
+let command = false
 
+program
+  .description('make markdown file to html file.')
   .option('-f, --file <file>', 'location of markdown file/folder.', resolvePath)
   .option('-o, --output <output>', 'location of generated files to save. ' +
     'Directory structure will be preserved, while <file> is a folder.', resolvePath)
   .option('-c, --config <config>', 'location of config file(yaml, json/js supported).', resolvePath)
 
-  .option('-T, --title <title>', '[post] html title.')
+program
+  .command('create <name>')
+  .description('create new post.')
+  .option('-t, --type <type>', '[post] type, respective template will be applied.')
   .option('-D, --desc <desc>', '[post] html description.')
   .option('-K, --keywords <keyword,keyword,...>', '[post] html keywords.', parseArray)
   .option('-C, --categories <category,category,...>', '[post] categories.', parseArray)
-  .option('-T, --tag <tag,tag,...>', '[post] tags.', parseArray)
+  .option('-T, --tags <tag,tag,...>', '[post] tags.', parseArray)
   .option('-P, --passcode <passcode>', '[post] passcode, if encryption is supposed.')
+  .action(function(name, options) {
+    command = true
+    entry.create(name, Object.assign(options.opts(), {
+      cwd: cwd
+    })).catch(console.error)
+  })
 
+const opts = program
   .parse(process.argv)
   .opts()
 
-entry({
-  cwd: cwd,
-  file: opts.file,
-  output: opts.output,
-  config: opts.config,
-  title: opts.title,
-  description: opts.desc,
-  keywords: opts.keywords,
-  tags: opts.tags,
-  categories: opts.categories,
-  passcode: opts.passcode
-}).catch(console.error)
+if (!command)
+  entry({
+    cwd: cwd,
+    file: opts.file,
+    output: opts.output,
+    config: opts.config,
+    title: opts.title,
+    description: opts.desc,
+    keywords: opts.keywords,
+    tags: opts.tags,
+    categories: opts.categories,
+    passcode: opts.passcode
+  }).catch(console.error)

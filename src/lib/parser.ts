@@ -1,20 +1,29 @@
 import marked from 'marked'
 import { safeLoad } from 'js-yaml'
-import { contextInterface, postInterface } from '../interface'
+import { contextInterface, postMetaInterface } from '../interface'
 import highlight from './highlight'
 import Renderer from './renderer'
 import sanitizer from './sanitizer'
+import { readFileText } from '../helper'
 
-export = async function(opts: contextInterface, text: string) {
+export = async function(opts: contextInterface, text?: string) {
+
+  if (!text) {
+    text = await readFileText(opts.file)
+  }
 
   text = cleanRawText(text)
 
   const parts = extractRawText(text)
 
-  const meta: postInterface = parseMeta(parts.meta)
+  const meta: postMetaInterface = parseMeta(parts.meta)
 
   const content: string = await parseContent(parts.content, opts)
 
+  return {
+    meta,
+    content
+  }
 }
 
 function cleanRawText(text: string): string {

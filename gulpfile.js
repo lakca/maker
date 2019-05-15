@@ -5,9 +5,11 @@ const browserify = require('browserify')
 const source = require('vinyl-source-stream')
 const uglify = require('gulp-uglify')
 const buffer = require('vinyl-buffer')
+const ts = require('gulp-typescript')
 
 gulp.task('watch', function() {
   gulp.watch('./src/public/*.js', gulp.parallel(['jsfile']))
+  gulp.watch('./src/**/*.ts', gulp.parallel(['typescript']))
 })
 
 function isJsFile(file) {
@@ -29,4 +31,12 @@ gulp.task('jsfile', function() {
     .pipe(gulp.dest('./public/static'))
   })
   return Promise.resolve()
+})
+
+const tsProject = ts.createProject('tsconfig.json')
+gulp.task('typescript', function() {
+  const entry = path.join(__dirname, 'src/**/*.ts')
+  const tsResult = gulp.src([entry])
+    .pipe(tsProject())
+  return tsResult.js.pipe(gulp.dest('./dist/'))
 })

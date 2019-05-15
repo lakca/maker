@@ -17,11 +17,13 @@ has_search: true
 
 # make
 # absolute or relative path of output folder
-output: dist
-
-theme: default
+output: ./public
+theme: ./theme
 # pagination of post list page
 post_per_page: 10
+post_name: <y>-<m>-<d>
+# post_name: <title>
+# post_name: <timestamp>
 
 # plugin:
 share.services:
